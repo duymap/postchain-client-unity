@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace Chromia.Postchain.Client.GTX
 {
@@ -7,6 +8,13 @@ namespace Chromia.Postchain.Client.GTX
     {
         public bool Error;
         public string ErrorMessage;
+    }
+
+    [Serializable]
+    public class QueryContent
+    {
+        public bool __postchainerror__;
+        public string message;
     }
 
     public class GTXClient
@@ -52,42 +60,21 @@ namespace Chromia.Postchain.Client.GTX
         ///<returns>Task, which returns the query return content.</returns>
         public async Task<(object content, PostchainErrorControl control)> Query (string queryName, params object[] queryObject)
         {
-            var queryContent = await this.RestApiClient.Query(queryName, queryObject);
-            /*
             PostchainErrorControl queryError = new PostchainErrorControl();
+            var jsonStr = "";
             try
             {
-                queryError.Error = queryContent.__postchainerror__;
-                queryError.ErrorMessage = queryContent.message;
-
-                return (default(T), queryError);
-            }
-            catch
+                var queryContent = await this.RestApiClient.Query(queryName, queryObject);
+                jsonStr = JsonUtility.ToJson(queryContent);
+                //QueryContent query = JsonUtility.FromJson<QueryContent>(jsonStr);
+            } catch (Exception e)
             {
-                queryError.Error = false;
-                queryError.ErrorMessage = "";                
-            }
-
-            T contentObject;
-            try
-            {
-                if (queryContent.GetType().IsPrimitive || queryContent.GetType().Equals(typeof(String)))
-                {
-                    contentObject = (T) queryContent;
-                }
-                else
-                {
-                    contentObject = queryContent.ToObject<T>();
-                }
-            }
-            catch (System.Exception e)
-            {
-                contentObject = default(T);
                 queryError.Error = true;
                 queryError.ErrorMessage = e.Message;
             }
-            */
-            return (1, new PostchainErrorControl());
+            
+           
+            return (jsonStr, new PostchainErrorControl());
         } 
 
 

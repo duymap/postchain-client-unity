@@ -40,11 +40,24 @@ namespace Chromia.Postchain.Client
             return await Get(this.UrlBase, "tx/" + this.BlockchainRID + "/" + messageHash + "/status");
         }
 
+        public async Task<object> getDebug()
+        {
+            var ret = await Get(this.UrlBase, "_debug/");
+            return ret;
+        }
+
+        public string testQuery(string queryName, params object[] queryObject)
+        {
+            string queryString = BuildQuery(queryObject);
+            queryString = AppendQueryName(queryName, queryString);
+            return queryString;
+        }
+
         public async Task<object> Query(string queryName, params object[] queryObject)
         {
             string queryString = BuildQuery(queryObject);
             queryString = AppendQueryName(queryName, queryString);
-
+            
             return await Post(this.UrlBase, "query/" + this.BlockchainRID, queryString);
         }
 
@@ -64,12 +77,13 @@ namespace Chromia.Postchain.Client
 
         private static string BuildQuery(object queryObject, int layer = 0)
         {
-            /*
+            
             if (IsTuple(queryObject.GetType()))
             {
+                Tuple<object, object> tuple = (Tuple<object, object>)queryObject;
                 if (layer < 2)
                 {
-                    return String.Format(@"""{0}"": {1}", queryObject.Item1, BuildQuery(queryObject.Item2, layer + 1));
+                    return String.Format(@"""{0}"": {1}", tuple.Item1, BuildQuery(tuple.Item2, layer + 1));
                 }
                 else
                 {
@@ -85,15 +99,16 @@ namespace Chromia.Postchain.Client
             }
             else if (queryObject is byte[])
             {
-                return String.Format(@"""{0}""", Util.ByteArrayToString(queryObject));
+                return String.Format(@"""{0}""", Util.ByteArrayToString((byte[])queryObject));
             }
             else if (queryObject is System.Array)
             {
-                if (layer == 0 && queryObject.Length == 0)
+                System.Array arrayObj = (System.Array)queryObject;
+                if (layer == 0 && arrayObj.Length == 0)
                 {
                     return "";
                 }
-                else if (layer != 0 && queryObject.Length == 0)
+                else if (layer != 0 && arrayObj.Length == 0)
                 {
                     return "[]";
                 }
@@ -108,7 +123,7 @@ namespace Chromia.Postchain.Client
                     queryString = "[";
                 }
 
-                foreach (var subQueryParam in queryObject)
+                foreach (var subQueryParam in arrayObj)
                 {
                     queryString += BuildQuery(subQueryParam, layer + 1) + ", ";
                 }
@@ -134,8 +149,7 @@ namespace Chromia.Postchain.Client
             else
             {
                 throw new Exception("Unknown query data type " + queryObject.GetType());
-            }*/
-            return "";
+            }
         }
 
         private static IEnumerable<object> ToEnumerable(object tuple)
@@ -172,9 +186,9 @@ namespace Chromia.Postchain.Client
 
         public async Task<GTX.PostchainErrorControl> WaitConfirmation(string txRID)
         {
-            /*
+            
             var status = await this.Status(txRID);
-
+            /*
             var statusString = status.status.ToObject<string>();
             switch (statusString)
             {
@@ -203,7 +217,7 @@ namespace Chromia.Postchain.Client
             return await this.WaitConfirmation(txRID);
         }
 
-        private async Task<object> Get(string urlBase, string path)
+        public async Task<object> Get(string urlBase, string path)
         {
             
             var rq = UnityWebRequest.Get(urlBase +  path);
