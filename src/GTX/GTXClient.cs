@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using UnityEngine;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace Chromia.Postchain.Client.GTX
 {
@@ -58,13 +60,13 @@ namespace Chromia.Postchain.Client.GTX
         ///<param name = "queryName">Name of the query to be called.</param>
         ///<param name = "queryObject">List of parameter pairs of query parameter name and its value. For example {"city", "Hamburg"}.</param>
         ///<returns>Task, which returns the query return content.</returns>
-        public async Task<(object content, PostchainErrorControl control)> Query (string queryName, params object[] queryObject)
+        public async Task<(object content, PostchainErrorControl control)> Query (string queryName, Dictionary<string, object> keyValuePairs)
         {
             PostchainErrorControl queryError = new PostchainErrorControl();
             var jsonStr = "";
             try
             {
-                var queryContent = await this.RestApiClient.Query(queryName, queryObject);
+                var queryContent = await this.RestApiClient.Query(queryName, keyValuePairs);
                 jsonStr = JsonUtility.ToJson(queryContent);
                 //QueryContent query = JsonUtility.FromJson<QueryContent>(jsonStr);
             } catch (Exception e)

@@ -46,16 +46,16 @@ namespace Chromia.Postchain.Client
             return ret;
         }
 
-        public string testQuery(string queryName, params object[] queryObject)
+        public string testQuery(string queryName, Dictionary<string, object> keyValuePairs)
         {
-            string queryString = BuildQuery(queryObject);
+            string queryString = JsonConvert.SerializeObject(keyValuePairs);//;BuildQuery(queryObject);
             queryString = AppendQueryName(queryName, queryString);
             return queryString;
         }
 
-        public async Task<object> Query(string queryName, params object[] queryObject)
+        public async Task<object> Query(string queryName, Dictionary<string, object> keyValuePairs)
         {
-            string queryString = BuildQuery(queryObject);
+            string queryString = JsonConvert.SerializeObject(keyValuePairs);
             queryString = AppendQueryName(queryName, queryString);
             
             return await Post(this.UrlBase, "query/" + this.BlockchainRID, queryString);
@@ -231,15 +231,19 @@ namespace Chromia.Postchain.Client
         }
 
         private async Task<object> Post(string urlBase, string path, string jsonString)
-        {
-            var rq = UnityWebRequest.Post(urlBase + path, jsonString);
-            await rq.SendWebRequest();
-            if (rq.isNetworkError)
+        {           
+            var request = new UnityWebRequest(urlBase + path, "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonString);
+            request.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            await request.SendWebRequest();
+            if (request.isNetworkError)
             {
-                return JsonConvert.DeserializeObject("{ 'status': 'exception', 'message': '" + rq.error + "' }");
+                return JsonConvert.DeserializeObject("{ 'status': 'exception', 'message': '" + request.error + "' }");
             }
-            else return JsonConvert.DeserializeObject(rq.downloadHandler.text);
-            
+            else return JsonConvert.DeserializeObject(request.downloadHandler.text);
+
         }
 
         private void ValidateMessageHash(string messageHash)
