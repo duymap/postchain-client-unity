@@ -5,10 +5,10 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
+using UnityEngine;
 
 namespace Chromia.Postchain.Client
-{
-
+{   
 
     public class RESTClient
     {
@@ -46,16 +46,16 @@ namespace Chromia.Postchain.Client
             return ret;
         }
 
-        public string testQuery(string queryName, Dictionary<string, object> keyValuePairs)
-        {
-            string queryString = JsonConvert.SerializeObject(keyValuePairs);//;BuildQuery(queryObject);
-            queryString = AppendQueryName(queryName, queryString);
-            return queryString;
-        }
+        //public string testQuery(string queryName, Dictionary<string, object> keyValuePairs)
+        //{
+        //    string queryString = MiniJSON.Json.Serialize(keyValuePairs);            
+        //    queryString = AppendQueryName(queryName, queryString);
+        //    return queryString;
+        //}
 
         public async Task<object> Query(string queryName, Dictionary<string, object> keyValuePairs)
-        {
-            string queryString = JsonConvert.SerializeObject(keyValuePairs);
+        {          
+            string queryString = MiniJSON.Json.Serialize(keyValuePairs);
             queryString = AppendQueryName(queryName, queryString);
             
             return await Post(this.UrlBase, "query/" + this.BlockchainRID, queryString);
@@ -72,83 +72,6 @@ namespace Chromia.Postchain.Client
             else
             {
                 return String.Format(@"{{""type"": ""{0}""}}", queryName);
-            }
-        }
-
-        private static string BuildQuery(object queryObject, int layer = 0)
-        {
-            
-            if (IsTuple(queryObject.GetType()))
-            {
-                Tuple<object, object> tuple = (Tuple<object, object>)queryObject;
-                if (layer < 2)
-                {
-                    return String.Format(@"""{0}"": {1}", tuple.Item1, BuildQuery(tuple.Item2, layer + 1));
-                }
-                else
-                {
-                    string queryString = "[";
-                    var queryItems = ToEnumerable(queryObject);
-                    foreach (var queryItem in queryItems)
-                    {
-                        queryString += BuildQuery(queryItem, layer + 1) + ", ";
-                    }
-                    queryString = queryString.Remove(queryString.Length - 2) + "]";
-                    return queryString;
-                }
-            }
-            else if (queryObject is byte[])
-            {
-                return String.Format(@"""{0}""", Util.ByteArrayToString((byte[])queryObject));
-            }
-            else if (queryObject is System.Array)
-            {
-                System.Array arrayObj = (System.Array)queryObject;
-                if (layer == 0 && arrayObj.Length == 0)
-                {
-                    return "";
-                }
-                else if (layer != 0 && arrayObj.Length == 0)
-                {
-                    return "[]";
-                }
-
-                string queryString = "";
-                if (layer == 0)
-                {
-                    queryString = "{";
-                }
-                else
-                {
-                    queryString = "[";
-                }
-
-                foreach (var subQueryParam in arrayObj)
-                {
-                    queryString += BuildQuery(subQueryParam, layer + 1) + ", ";
-                }
-
-                if (layer == 0)
-                {
-                    queryString = queryString.Remove(queryString.Length - 2) + "}";
-                }
-                else
-                {
-                    queryString = queryString.Remove(queryString.Length - 2) + "]";
-                }
-                return queryString;
-            }
-            else if (queryObject is System.Int32)
-            {
-                return queryObject.ToString();
-            }
-            else if (queryObject is string)
-            {
-                return String.Format(@"""{0}""", (string)queryObject);
-            }
-            else
-            {
-                throw new Exception("Unknown query data type " + queryObject.GetType());
             }
         }
 
@@ -231,12 +154,12 @@ namespace Chromia.Postchain.Client
         }
 
         private async Task<object> Post(string urlBase, string path, string jsonString)
-        {           
-            var request = new UnityWebRequest(urlBase + path, "POST");
+        {
+            var request = new UnityWebRequest(urlBase + path, "POST");            
             byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonString);
             request.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
+            request.SetRequestHeader("Content-Type", "application/json");            
             await request.SendWebRequest();
             if (request.isNetworkError)
             {
