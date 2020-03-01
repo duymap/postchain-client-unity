@@ -8,7 +8,13 @@ using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Chromia.Postchain.Client
-{   
+{
+    [Serializable]
+    public class StatusResponse {
+        public string status;
+        public string message;
+    }
+
 
     public class RESTClient
     {
@@ -110,9 +116,11 @@ namespace Chromia.Postchain.Client
         public async Task<GTX.PostchainErrorControl> WaitConfirmation(string txRID)
         {
             
-            var status = await this.Status(txRID);
-            /*
-            var statusString = status.status.ToObject<string>();
+            var statusJson = await this.Status(txRID);
+
+            var status = JsonUtility.FromJson<StatusResponse>(statusJson.ToString());
+
+            var statusString = status.status;
             switch (statusString)
             {
                 case "confirmed":
@@ -129,8 +137,8 @@ namespace Chromia.Postchain.Client
                     return new GTX.PostchainErrorControl() { Error = true, ErrorMessage = "HTTP Exception: " + status.message };
                 default:
                     return new GTX.PostchainErrorControl() { Error = true, ErrorMessage = "Got unexpected response from server: " + statusString };
-            }*/
-            return new GTX.PostchainErrorControl();
+            }
+            //return new GTX.PostchainErrorControl();
         }
 
         public async Task<GTX.PostchainErrorControl> PostAndWaitConfirmation(string serializedTransaction, string txRID)
@@ -147,9 +155,9 @@ namespace Chromia.Postchain.Client
             await rq.SendWebRequest();
             if (rq.isNetworkError)
             {
-                return JsonConvert.DeserializeObject("{ 'status': 'exception', 'message': '" + rq.error + "' }");
+                return "{ 'status': 'exception', 'message': '" + rq.error + "' }";
             }
-            else return JsonConvert.DeserializeObject(rq.downloadHandler.text);
+            else return rq.downloadHandler.text;
             
         }
 
