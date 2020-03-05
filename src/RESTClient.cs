@@ -52,13 +52,6 @@ namespace Chromia.Postchain.Client
             return ret;
         }
 
-        //public string testQuery(string queryName, Dictionary<string, object> keyValuePairs)
-        //{
-        //    string queryString = MiniJSON.Json.Serialize(keyValuePairs);            
-        //    queryString = AppendQueryName(queryName, queryString);
-        //    return queryString;
-        //}
-
         public async Task<object> Query(string queryName, Dictionary<string, object> keyValuePairs)
         {          
             string queryString = MiniJSON.Json.Serialize(keyValuePairs);
@@ -113,25 +106,27 @@ namespace Chromia.Postchain.Client
                 || (openType == typeof(ValueTuple<,,,,,,,>) && IsTuple(tuple.GetGenericArguments()[7]));
         }
 
+        public static StatusResponse statusResonse;
+        
         public async Task<GTX.PostchainErrorControl> WaitConfirmation(string txRID)
         {
             
             var statusJson = await this.Status(txRID);
 
             var status = JsonUtility.FromJson<StatusResponse>(statusJson.ToString());
+            statusResonse = status;
 
             var statusString = status.status;
             switch (statusString)
             {
                 case "confirmed":
+                    Debug.Log("Status: " + status.status);
                     return new GTX.PostchainErrorControl() { Error = false, ErrorMessage = "" };
                 case "rejected":
                     return new GTX.PostchainErrorControl() { Error = true, ErrorMessage = "Message was rejected" };
-                case "unknown":
-                    await Task.Delay(511);
+                case "unknown":                  
                     return await this.WaitConfirmation(txRID);
-                case "waiting":
-                    await Task.Delay(511);
+                case "waiting":                    
                     return await this.WaitConfirmation(txRID);
                 case "exception":
                     return new GTX.PostchainErrorControl() { Error = true, ErrorMessage = "HTTP Exception: " + status.message };
@@ -139,7 +134,7 @@ namespace Chromia.Postchain.Client
                     return new GTX.PostchainErrorControl() { Error = true, ErrorMessage = "Got unexpected response from server: " + statusString };
             }
             //return new GTX.PostchainErrorControl();
-        }
+        }        
 
         public async Task<GTX.PostchainErrorControl> PostAndWaitConfirmation(string serializedTransaction, string txRID)
         {
